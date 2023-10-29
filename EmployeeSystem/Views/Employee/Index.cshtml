@@ -1,0 +1,168 @@
+﻿@model List<EmployeeSystem.Models.Employee>
+@{
+    var options = new Dictionary<string, string>
+    {
+        {"All", "All"},
+        {"Duplicate", "Duplicate"},
+        {"Unique", "Unique"}
+    };
+
+    var sortOptions = new Dictionary<string, string>
+    {
+        {"Ascending", "Asc"},
+        {"Descending", "Desc"}
+    };
+}
+
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+</head>
+<h1 class="text-center" style="font-size: 2.5rem; font-weight: bold; color: #343a40; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); margin-top: 40px; margin-bottom: 20px;">List of Employees</h1>
+
+
+<div class="card-header mb-3">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1 style="font-size: 1.5rem; color: #343a40; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); margin: 20px 0;">Employee Table</h1>
+        <div>
+            <a href="@Url.Action("Add", "Employee")" class="btn btn-outline-dark">Add Employee</a>
+        </div>
+    </div>
+    </div>
+
+
+<form asp-controller="Employee" asp-action="Index" method="get" class="mb-4">
+    <div class="row">
+        <div class="col-md-4 mb-2">
+            <label for="filter" class="form-label">Filter:</label>
+            <select name="filter" id="filter" class="form-select">
+                @foreach (var option in options)
+                {
+                    <option value="@option.Value">@option.Key</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-4 mb-2">
+            <label for="sort" class="form-label">Sort:</label>
+            <select name="sort" id="sort" class="form-select">
+                @foreach (var sortOption in sortOptions)
+                {
+                    <option value="@sortOption.Value">@sortOption.Key</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-primary" style="margin-top: 30px">Apply</button>
+        </div>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table id="employeeTable" class="table table-bordered table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Sr#</th>
+                <th>Employee Name</th>
+                <th>Colored Name</th>
+                <th>Reverse Name</th>
+                <th>Age</th>
+                <th>Department</th>
+                <th>Salary</th>
+                <th>July 2021</th>
+                <th>August 2021</th>
+                <th>September 2021</th>
+                <th>October 2021</th>
+                <th>November 2021</th>
+                <th>December 2021</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                var employee = Model[i];
+                bool isDuplicate = IsDuplicate(employee, Model);
+                bool hasSameSalary = Model.Count(e => e.Salary == employee.Salary) > 1;
+
+                <tr style="background-color: @(isDuplicate ? "red" : "white")">
+                    <td>@(i + 1)</td>
+                    <td>@employee.EmployeeName</td>
+                    <td>
+                        @foreach (char letter in employee.EmployeeName)
+                        {
+                            <span style="color: @(GetRandomColor())">@letter</span>
+                        }
+                    </td>
+                    <td>
+                        @foreach (char letter in new string(employee.EmployeeName.Reverse().ToArray()))
+                        {
+                            <span style="color: @(GetRandomColor())">@letter</span>
+                        }
+                    </td>
+                    <td>@(DateTime.Now.Year - employee.DOB.Year - (DateTime.Now.DayOfYear < employee.DOB.DayOfYear ? 1 : 0))</td>
+                    <td>@employee.Department</td>
+                    <td style="background-color: @(hasSameSalary ? "lightblue" : (IsDuplicate(employee, Model) ? "red" : "white"))">@employee.Salary</td>
+
+                    @{
+                        var projectedSalaries = employee.ProjectedSalaries();
+                    }
+
+                    @foreach (var projectedSalary in projectedSalaries)
+                    {
+                        <td>@projectedSalary</td>
+                    }
+
+                    @* <td><a href="Employee/View/@i" class="btn btn-info btn-sm">View</a></td> *@
+                    <td><a href="Employee/View/@employee.Id">View</a></td>
+                </tr>
+            }
+        </tbody>
+
+
+    </table>
+</div>
+<script>
+    jQuery(document).ready(function ($) {
+        $('#employeeTable').DataTable();
+    });
+
+    @functions {
+        Random random = new Random();
+
+        string GetRandomColor()
+        {
+            int red = random.Next(256);
+            int green = random.Next(256);
+            int blue = random.Next(256);
+
+            return $"rgb({red}, {green}, {blue})";
+        }
+    }
+
+        @functions {
+        bool IsDuplicate(Employee employee, List<Employee> employees)
+        {
+            return employees.Count(e =>
+            e.Id != employee.Id &&
+            e.Department == employee.Department &&
+            e.DOB == employee.DOB
+            //&&
+           // e.FormNumber == employee.FormNumber
+            ) > 0;
+        }
+        }
+
+        @functions {
+        bool sameSallary(Employee employee, List<Employee> employees)
+        {
+            return employees.Count(e =>
+            e.Id != employee.Id &&
+            e.Salary == employee.Salary
+            ) > 0;
+        }
+        }
+</script>
+
